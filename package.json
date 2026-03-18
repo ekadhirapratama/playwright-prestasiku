@@ -1,0 +1,28 @@
+{
+  "name": "testing-prestasiku-kai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "generate": "ts-node utils/test-generator.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^25.5.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "minimist": "^1.2.8",
+    "xlsx": "^0.18.5"
+  }
+}
