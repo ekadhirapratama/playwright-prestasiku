@@ -1,64 +1,63 @@
-# Playwright Test Generator
+# QA Tools CLI Pipeline (Prestasiku)
 
 ## Overview
 
-This app reads test case data from a spreadsheet file and automatically generates Playwright `*.spec.ts` test files for a given target application. The project is written in TypeScript and uses Playwright as the test runner.
+Proyek ini adalah toolchain berbasis TypeScript untuk otomasi QA (Quality Assurance) pada proyek Prestasiku. Pipeline ini berfungsi untuk mengambil data *backlog* (Epic & User Story) dari file *spreadsheet*, lalu mengotomatisasi pembuatan dokumen skenario *Test Cases* (berformat Markdown) dan skrip *Test End-to-End* (Playwright TypeScript) berbasis *Artificial Intelligence* (menggunakan OpenRouter API) berdasarkan laporan target yang diambil dari *daily standup* (BASR).
 
 ---
 
-## Project Structure
+## Workflow (Cara Penggunaan)
 
-```text
-testing-prestasiku-kai/
-├── data/                        # Place your Excel/CSV test case files here
-├── tests/                       # Output folder — generated *.spec.ts files will land here
-├── utils/
-│   ├── file-reader.ts           # Module to read data from spreadsheet files
-│   └── test-generator.ts        # CLI entry point: reads data → writes spec files
-├── .env                         # Credentials (BASE_URL, ACCOUNT, PASSWORD) — NOT committed
-├── playwright.config.ts         # Playwright configuration
-├── package.json
-└── tsconfig.json
-```
+Pipeline ini terdiri dari dua perintah CLI utama yang dijalankan secara sekuensial:
 
----
+### 1. Sinkronisasi Data Backlog (`npm run parse`)
 
-## How to Run
-
-Follow these steps to generate and run your tests.
-
-### 1. Prepare your Data
-
-Place your Excel `.xlsx` file containing the test cases inside the `data/` directory.
-
-The expected columns are: `JIRA-ID`, `Sprint`, `Epic / Modul`, `User Story`, `TC ID`, `Judul Test Case`, `Tipe`, `Priority`, `Precondition`, `Test Steps`, `Expected Result`, `Actual Result`, `Status`, `Platform`, `Tested By`, `Tested Date`, `Bug Report Link`, `Notes`.
-
-### 2. Generate Playwright Spec Files
-
-Use the following `npm` command to generate the Playwright specifications. Pass your target Excel file name using `--file` and the target sheet using `--sheet` arguments.
+Proses pertama adalah memastikan master data terbaru sudah terindeks ke format lokal sehingga AI mengenali spesifikasi per _backlog_. Letakkan file `mastersheet.xlsx` di `data/`.
 
 ```bash
-npm run generate -- --file "your-file-name.xlsx" --sheet "Sheet1"
+npm run parse
+```
+*Script ini akan memilah file, mendeteksi ID dengan format otomatis (misal: `E1.S1`), dan mencadangkan data *User Story* ke dalam `backlog.json`.*
+
+### 2. Mempersiapkan Laporan Harian (Daily)
+
+Siapkan referensi *daily standup* menggunakan teks markdown (`.md`) di direktori `daily/`. File berisi tabel status *story* yang telah berstatus `Done`.
+
+Teks patokan di sebuah kolom bernama `Done: {EPIC_ID}.{STORY_ID}` wajib ada.
+**Contoh isian `daily/2026-03-24.md`**:
+```markdown
+# Laporan BASR
+
+| No | Nama Talent | Laporan |
+|---|---|---|
+| 1 | Tester A | **Done:** E1.S1, E2.S2 |
 ```
 
-*Example:*
+### 3. Generate Skrip Test Otomatis (`npm run generate:daily`)
+
+Kirim rujukan markdown *(daily)* untuk menginstruksikan AI mencocokkan ID *Done* dengan Acceptance Criteria (AC) pada Master backlog dan menghasilkan Test Case otomatis.
+
 ```bash
-npm run generate -- --file sample.xlsx --sheet Sheet1
+# Menghasilkan Manual Test Case MD ke direktori `test-cases/`
+npm run generate:daily -- --daily daily/2026-03-24.md
+
+# Menghasilkan Manual Test Case (MD) sekaligus Playwright automation code (*.spec.ts) di `tests/`
+npm run generate:daily -- --daily daily/2026-03-24.md --playwright
+
+# Mengesampingkan model di dalam .env (Manual Flag)
+npm run generate:daily -- --daily daily/2026-03-24.md --playwright --model mistralai/mistral-7b-instruct
 ```
 
-After running this, the script will parse the rows and output a new file at `tests/Sheet1.spec.ts`.
+> **Catatan:** Jika *rate limit* dari API di OpenRouter tercapai (error `429`), *fallback generator* akan menyimpan payload JSON *raw* di `test-cases/ID-raw.txt` agar referensi proses *retry* kelak tidak hilang.
 
-### 3. Run Playwright Tests
+### 4. Eksekusi End-to-End dengan Playwright
 
-Once your specs are generated in the `tests/` directory, you can run Playwright and execute them:
+Setelah rujukan uji berhasil memproduksi file `tests/*.spec.ts`, spesifikasi tersebut bisa langsung ditelusuri Playwright.
 
 ```bash
-# Run tests headlessly
-npm test
+# Ujicoba Test headless biasa
+npx playwright test tests/2026-03-24.spec.ts
 
-# Run tests with the UI Mode enabled
+# Run test ke UI Mode Interactive
 npx playwright test --ui
-
-# Run tests and open the generated HTML report
-npx playwright show-report
 ```
