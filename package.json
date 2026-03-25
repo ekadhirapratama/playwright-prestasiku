@@ -8,7 +8,9 @@
   },
   "scripts": {
     "test": "playwright test",
-    "generate": "ts-node utils/test-generator.ts"
+    "generate": "ts-node utils/test-generator.ts",
+    "parse": "ts-node utils/parse.ts",
+    "generate:daily": "ts-node utils/generate.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +25,7 @@
   "dependencies": {
     "dotenv": "^17.3.1",
     "minimist": "^1.2.8",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "googleapis": "^144.0.0"
   }
 }
